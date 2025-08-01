@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/testbd
+    username: root
+    password: 1234
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+#  liquibase:
+#    change-log: classpath:db/migration/master.yaml
+
+server:
+  port: 8080
+
+jwt:
+  secret: QMXJ5e+VceqEj+erF7s1//xb6rkeGtVm8M2J8NRwYYA=
+  expiration: 3600000 # 1 час в миллисекундах
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    com.example.bankcards: DEBUG
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+encryption:
+  secret: "1234567890123456"
