@@ -1,6 +1,5 @@
 package org.Akorad.wallets.service;
 
-import jakarta.persistence.OptimisticLockException;
 import org.Akorad.dto.transaction.TransactionDto;
 import org.Akorad.dto.transaction.TransactionMapper;
 import org.Akorad.entity.Transaction;
@@ -181,6 +180,6 @@ class TransactionServiceImplTest {
         Page<TransactionDto> result = transactionService.getTransactionsByWalletId(wallet, pageable);
 
         assertEquals(1, result.getTotalElements());
-        assertEquals(dto, result.getContent().get(0));
+        assertEquals(dto, result.getContent().getFirst());
     }
 }

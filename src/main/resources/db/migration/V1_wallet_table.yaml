@@ -4,7 +4,7 @@ databaseChangeLog:
       author: akorad
       changes:
         - createTable:
-            tableName: wallets
+            tableName: wallet
             columns:
               - column:
                   name: id

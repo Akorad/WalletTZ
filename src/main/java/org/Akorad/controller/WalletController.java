@@ -111,9 +111,9 @@ public class WalletController {
     })
     @GetMapping("/getUserWallets")
     public ResponseEntity<Page<WalletDto>> getWallets(
-            @Parameter(description = "Номер страницы", required = false)
+            @Parameter(description = "Номер страницы")
             @RequestParam(value = "page", defaultValue = "0") int page,
-            @Parameter(description = "Размер страницы", required = false)
+            @Parameter(description = "Размер страницы")
             @RequestParam(value = "size", defaultValue = "10") int size) {
         Page<WalletDto> wallets = walletService.getUserWallets(Pageable.ofSize(size).withPage(page));
         return ResponseEntity.ok(wallets);

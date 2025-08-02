@@ -10,10 +10,13 @@ import org.Akorad.reposetory.TransactionalRepository;
 import org.Akorad.reposetory.WalletRepository;
 import org.Akorad.service.TransactionService;
 import org.Akorad.util.OperationValidator;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -30,7 +33,11 @@ public class TransactionServiceImpl implements TransactionService {
     private final OperationValidator operationValidator;
 
     @Override
-    @Retryable(maxAttempts = 5)
+    @Retryable(
+            value = {OptimisticLockingFailureException.class},
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 10, multiplier = 2, maxDelay = 1000)
+    )
     public void deposit(UUID walletID, BigDecimal amount, String comment) {
 
             operationValidator.validateAmount(amount);
@@ -45,7 +52,12 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    @Retryable(maxAttempts = 5)
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @Retryable(
+            value = {OptimisticLockingFailureException.class},
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 10, multiplier = 2, maxDelay = 1000)
+    )
     public void withdraw(Wallet wallet, BigDecimal amount, String comme) {
 
             operationValidator.validateAmount(amount);
@@ -62,7 +74,11 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    @Retryable(maxAttempts = 5)
+    @Retryable(
+            value = {OptimisticLockingFailureException.class},
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 10, multiplier = 2, maxDelay = 1000)
+    )
     public void transfer(Wallet fromWallet, Wallet toWallet, BigDecimal amount, String comment) {
 
             if (fromWallet.getBalance().compareTo(amount) < 0) {
