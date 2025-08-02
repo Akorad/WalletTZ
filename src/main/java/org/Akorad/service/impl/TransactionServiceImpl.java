@@ -1,25 +1,23 @@
 package org.Akorad.service.impl;
 
-import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
 import org.Akorad.dto.transaction.TransactionDto;
 import org.Akorad.dto.transaction.TransactionMapper;
 import org.Akorad.entity.Transaction;
 import org.Akorad.entity.Wallet;
 import org.Akorad.exception.transaction.InsufficientFundsException;
-import org.Akorad.exception.transaction.InvalidTransactionException;
 import org.Akorad.reposetory.TransactionalRepository;
 import org.Akorad.reposetory.WalletRepository;
 import org.Akorad.service.TransactionService;
 import org.Akorad.util.OperationValidator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
@@ -32,8 +30,9 @@ public class TransactionServiceImpl implements TransactionService {
     private final OperationValidator operationValidator;
 
     @Override
+    @Retryable(maxAttempts = 5)
     public void deposit(UUID walletID, BigDecimal amount, String comment) {
-        executeWithRetry(()-> {
+
             operationValidator.validateAmount(amount);
 
             Wallet wallet = operationValidator.findWalletOrTrow(walletID, walletRepository);
@@ -42,14 +41,13 @@ public class TransactionServiceImpl implements TransactionService {
 
             walletRepository.save(wallet);
 
-             return transactionalRepository.save(Transaction.deposit(wallet, amount, comment));
-        }, 5);
-
+            transactionalRepository.save(Transaction.deposit(wallet, amount, comment));
     }
 
     @Override
+    @Retryable(maxAttempts = 5)
     public void withdraw(Wallet wallet, BigDecimal amount, String comme) {
-        executeWithRetry(()-> {
+
             operationValidator.validateAmount(amount);
 
             if (wallet.getBalance().compareTo(amount) < 0) {
@@ -60,13 +58,13 @@ public class TransactionServiceImpl implements TransactionService {
 
             walletRepository.save(wallet);
 
-            return transactionalRepository.save(Transaction.withdraw(wallet, amount, comme));
-        }, 5);
+            transactionalRepository.save(Transaction.withdraw(wallet, amount, comme));
     }
 
     @Override
+    @Retryable(maxAttempts = 5)
     public void transfer(Wallet fromWallet, Wallet toWallet, BigDecimal amount, String comment) {
-        executeWithRetry(()-> {
+
             if (fromWallet.getBalance().compareTo(amount) < 0) {
                 throw new InsufficientFundsException(fromWallet.getWalletId(), amount);
             }
@@ -77,8 +75,8 @@ public class TransactionServiceImpl implements TransactionService {
             walletRepository.save(fromWallet);
             walletRepository.save(toWallet);
 
-            return transactionalRepository.save(Transaction.transfer(fromWallet, toWallet, amount, comment));
-        }, 3);
+            transactionalRepository.save(Transaction.transfer(fromWallet, toWallet, amount, comment));
+
     }
 
     @Override
@@ -87,16 +85,4 @@ public class TransactionServiceImpl implements TransactionService {
         return transactions.map(transactionMapper::toDto);
     }
 
-    private <T> T executeWithRetry(Supplier<T> action, int maxRetries) {
-        int attempts = 0;
-        while (true) {
-            try {
-                return action.get();
-            } catch (OptimisticLockException e) {
-                if (++attempts > maxRetries) {
-                    throw new InvalidTransactionException("Превышено максимальное количество попыток транзакции");
-                }
-            }
-        }
-    }
 }

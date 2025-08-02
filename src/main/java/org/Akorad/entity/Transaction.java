@@ -32,32 +32,32 @@ public class Transaction {
 
 
     public static Transaction deposit(Wallet wallet, BigDecimal amount, String comment) {
-        return new Transaction() {{
-            setWallet(wallet);
-            setOperationType(OperationType.DEPOSIT);
-            setAmount(amount);
-            setTransactionDate(LocalDateTime.now());
-            setComment(comment);
-        }};
+        Transaction tx = new Transaction();
+        tx.setWallet(wallet);
+        tx.setOperationType(OperationType.DEPOSIT);
+        tx.setAmount(amount);
+        tx.setTransactionDate(LocalDateTime.now());
+        tx.setComment(comment);
+        return tx;
     }
 
     public static Transaction withdraw(Wallet wallet, BigDecimal amount, String comment) {
-        return new Transaction() {{
-            setWallet(wallet);
-            setOperationType(OperationType.WITHDRAWAL);
-            setAmount(amount);
-            setTransactionDate(LocalDateTime.now());
-            setComment(comment);
-        }};
+        Transaction tx = new Transaction();
+        tx.setWallet(wallet);
+        tx.setOperationType(OperationType.WITHDRAWAL);
+        tx.setAmount(amount);
+        tx.setTransactionDate(LocalDateTime.now());
+        tx.setComment(comment);
+        return tx;
     }
 
     public static Transaction transfer(Wallet fromWallet, Wallet toWallet, BigDecimal amount, String comment) {
-        return new Transaction() {{
-            setWallet(fromWallet);
-            setOperationType(OperationType.TRANSFER);
-            setAmount(amount);
-            setTransactionDate(LocalDateTime.now());
-            setComment(comment);
-        }};
+        Transaction tx = new Transaction();
+        tx.setWallet(fromWallet);
+        tx.setOperationType(OperationType.TRANSFER);
+        tx.setAmount(amount);
+        tx.setTransactionDate(LocalDateTime.now());
+        tx.setComment(comment);
+        return tx;
     }
 }

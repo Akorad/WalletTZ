@@ -41,9 +41,8 @@ public class WalletServiceImpl implements WalletService {
         wallet.setUser(currentUser);
         wallet.setBalance(BigDecimal.ZERO);
 
-        System.out.println("Создание кошелька для пользователя: " + currentUser.getUsername());
         walletRepository.save(wallet);
-        System.out.println("Кошелек успешно создан: " + wallet.getWalletId());
+
         return walletMapper.toDto(wallet);
     }
 

@@ -1,25 +1,30 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/testbd
-    username: root
-    password: 1234
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
         format_sql: true
     open-in-view: false
-#  liquibase:
-#    change-log: classpath:db/migration/master.yaml
+
+  liquibase:
+    change-log: classpath:db/migration/master.yaml
 
 server:
-  port: 8080
+  port: ${SPRING_PORT:8080}
 
 jwt:
-  secret: QMXJ5e+VceqEj+erF7s1//xb6rkeGtVm8M2J8NRwYYA=
-  expiration: 3600000 # 1 час в миллисекундах
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:3600000}
+
+encryption:
+  secret: ${ENCRYPTION_SECRET}
 
 logging:
   level:
@@ -31,6 +36,3 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
-
-encryption:
-  secret: "1234567890123456"

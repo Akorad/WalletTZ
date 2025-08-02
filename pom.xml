@@ -17,6 +17,13 @@
     </properties>
 
     <dependencies>
+        <!--dotenv-java-->
+        <!-- https://mvnrepository.com/artifact/io.github.cdimascio/dotenv-java -->
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-java</artifactId>
+            <version>3.2.0</version>
+        </dependency>
         <!-- Spring Boot -->
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web -->
         <dependency>
@@ -38,6 +45,13 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
             <version>3.5.3</version>
         </dependency>
+        <!--spring-retry-->
+        <!-- https://mvnrepository.com/artifact/org.springframework.retry/spring-retry -->
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+            <version>2.0.12</version>
+        </dependency>
         <!-- PostgreSQL Driver -->
         <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
         <dependency>
@@ -47,11 +61,11 @@
         </dependency>
         <!-- Liquibase -->
         <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
-<!--        <dependency>-->
-<!--            <groupId>org.liquibase</groupId>-->
-<!--            <artifactId>liquibase-core</artifactId>-->
-<!--            <version>4.32.0</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <version>4.32.0</version>
+        </dependency>
         <!-- JWT -->
         <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
         <dependency>
@@ -100,6 +114,7 @@
             <artifactId>lombok</artifactId>
             <version>1.18.38</version>
         </dependency>
+
         <!-- MapStruct -->
         <!-- https://mvnrepository.com/artifact/org.mapstruct/mapstruct -->
         <dependency>
@@ -144,7 +159,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>3.5.3</version>
                 <configuration>
-                    <mainClass>com.example.bankcards.BankCardsApplication</mainClass>
+                    <mainClass>org.Akorad.Main</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

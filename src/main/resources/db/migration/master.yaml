@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: db/migration/V1_users_table.yaml
+  - include:
+      file: db/migration/V1_wallet_table.yaml
+  - include:
+      file: db/migration/V1_transaction_table.yaml
