@@ -10,6 +10,7 @@ import java.util.UUID;
 
 @Entity
 @Data
+@Table(name = "wallets")
 public class Wallet {
     @Id
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
