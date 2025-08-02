@@ -29,7 +29,7 @@ public class Wallet {
     @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Transaction> transactions = new ArrayList<>();
 
-    @Version
+//    @Version
     @Column(name = "version", nullable = false)
     private long version;
 }

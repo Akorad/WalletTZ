@@ -18,6 +18,12 @@ spring:
       hibernate:
         format_sql: true
     open-in-view: false
+  messages:
+    encoding: UTF-8
+
+  output:
+    ansi:
+      enabled: ALWAYS
 
   liquibase:
     change-log: classpath:db/migration/master.yaml

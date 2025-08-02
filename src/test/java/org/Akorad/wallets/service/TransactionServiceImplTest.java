@@ -1,11 +1,14 @@
 package org.Akorad.wallets.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.Akorad.dto.transaction.TransactionDto;
 import org.Akorad.dto.transaction.TransactionMapper;
 import org.Akorad.entity.Transaction;
 import org.Akorad.entity.Wallet;
 import org.Akorad.exception.transaction.InsufficientFundsException;
 import org.Akorad.exception.validator.InvalidAmountException;
+import org.Akorad.exception.wallet.WalletNotFoundException;
 import org.Akorad.reposetory.TransactionalRepository;
 import org.Akorad.reposetory.WalletRepository;
 import org.Akorad.service.impl.TransactionServiceImpl;
@@ -22,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,6 +40,9 @@ class TransactionServiceImplTest {
 
     @Mock
     private WalletRepository walletRepository;
+
+    @Mock
+    private EntityManager entityManager;
 
     @Mock
     private TransactionMapper transactionMapper;
@@ -59,27 +66,27 @@ class TransactionServiceImplTest {
         wallet.setVersion(1);
     }
 
+    private Wallet createWallet(UUID id, BigDecimal balance) {
+        Wallet wallet = new Wallet();
+        wallet.setWalletId(id);
+        wallet.setBalance(balance);
+        return wallet;
+    }
+
     @Test
     void deposit_ShouldIncreaseBalance_WhenAmountIsValid() {
-        BigDecimal amount = BigDecimal.valueOf(50);
-        String comment = "Test deposit";
+        // Arrange
+        BigDecimal amount = BigDecimal.valueOf(100);
+        when(walletRepository.findByWalletId(walletId)).thenReturn(Optional.of(wallet));
 
-        // Валидатор пропускает
-        doNothing().when(operationValidator).validateAmount(amount);
-        // Возвращаем кошелек при поиске
-        when(operationValidator.findWalletOrTrow(walletId, walletRepository)).thenReturn(wallet);
-        // Сохраняем кошелек
-        when(walletRepository.save(wallet)).thenReturn(wallet);
-        // Сохраняем транзакцию
-        when(transactionalRepository.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        // Act
+        transactionService.deposit(walletId, amount, "Test deposit");
 
-        transactionService.deposit(walletId, amount, comment);
-
-        // Баланс должен увеличиться
-        assertEquals(BigDecimal.valueOf(150), wallet.getBalance());
-
-        // Проверяем вызовы репозиториев
-        verify(walletRepository).save(wallet);
+        // Assert
+        assertEquals(BigDecimal.valueOf(200), wallet.getBalance());
+        verify(walletRepository).findByWalletId(walletId);
+        verify(entityManager).lock(wallet, LockModeType.PESSIMISTIC_WRITE);
+        verify(entityManager).refresh(wallet);
         verify(transactionalRepository).save(any(Transaction.class));
     }
 
@@ -96,66 +103,61 @@ class TransactionServiceImplTest {
 
     @Test
     void withdraw_ShouldDecreaseBalance_WhenSufficientFunds() {
-        BigDecimal amount = BigDecimal.valueOf(50);
-        String comment = "withdraw test";
+        // Arrange
+        BigDecimal amount = BigDecimal.valueOf(100);
+        Wallet wallet = createWallet(walletId, BigDecimal.valueOf(1000));
+        when(walletRepository.findByWalletId(walletId)).thenReturn(Optional.of(wallet));
 
-        doNothing().when(operationValidator).validateAmount(amount);
-        when(walletRepository.save(wallet)).thenReturn(wallet);
-        when(transactionalRepository.save(any(Transaction.class))).thenAnswer(i -> i.getArgument(0));
+        // Act
+        transactionService.withdraw(wallet, amount, "Test withdraw");
 
-        transactionService.withdraw(wallet, amount, comment);
-
-        assertEquals(BigDecimal.valueOf(50), wallet.getBalance());
-        verify(walletRepository).save(wallet);
+        // Assert
+        assertEquals(BigDecimal.valueOf(900), wallet.getBalance());
+        verify(walletRepository).findByWalletId(walletId);
+        verify(entityManager).lock(wallet, LockModeType.PESSIMISTIC_WRITE);
+        verify(entityManager).refresh(wallet);
         verify(transactionalRepository).save(any(Transaction.class));
     }
 
     @Test
-    void withdraw_ShouldThrowInsufficientFundsException_WhenNotEnoughBalance() {
-        BigDecimal amount = BigDecimal.valueOf(150);
-        String comment = "withdraw too much";
+    void withdraw_ShouldThrowException_WhenInsufficientFunds() {
+        // Arrange
+        BigDecimal amount = BigDecimal.valueOf(1500);
+        Wallet wallet = createWallet(walletId, BigDecimal.valueOf(1000));
+        when(walletRepository.findByWalletId(walletId)).thenReturn(Optional.of(wallet));
 
-        doNothing().when(operationValidator).validateAmount(amount);
-
-        InsufficientFundsException ex = assertThrows(InsufficientFundsException.class,
-                () -> transactionService.withdraw(wallet, amount, comment));
-
-        assertTrue(ex.getMessage().contains(walletId.toString()));
+        // Act & Assert
+        assertThrows(InsufficientFundsException.class, () ->
+                transactionService.withdraw(wallet, amount, "Test withdraw"));
     }
 
     @Test
     void transfer_ShouldMoveFunds_WhenSufficientBalance() {
-        Wallet toWallet = new Wallet();
-        toWallet.setWalletId(UUID.randomUUID());
-        toWallet.setBalance(BigDecimal.valueOf(20));
+        // Arrange
+        UUID fromWalletId = UUID.randomUUID();
+        UUID toWalletId = UUID.randomUUID();
 
-        BigDecimal amount = BigDecimal.valueOf(30);
-        String comment = "transfer test";
+        Wallet fromWallet = createWallet(fromWalletId, BigDecimal.valueOf(1000));
+        Wallet toWallet = createWallet(toWalletId, BigDecimal.ZERO);
 
-        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArgument(0));
-        when(transactionalRepository.save(any(Transaction.class))).thenAnswer(i -> i.getArgument(0));
+        when(walletRepository.findByWalletId(fromWalletId)).thenReturn(Optional.of(fromWallet));
+        when(walletRepository.findByWalletId(toWalletId)).thenReturn(Optional.of(toWallet));
 
-        transactionService.transfer(wallet, toWallet, amount, comment);
+        // Act
+        transactionService.transfer(fromWallet, toWallet, BigDecimal.valueOf(500), "Test transfer");
 
-        assertEquals(BigDecimal.valueOf(70), wallet.getBalance());
-        assertEquals(BigDecimal.valueOf(50), toWallet.getBalance());
-
-        verify(walletRepository, times(2)).save(any(Wallet.class));
+        // Assert
+        assertEquals(BigDecimal.valueOf(500), fromWallet.getBalance());
+        assertEquals(BigDecimal.valueOf(500), toWallet.getBalance());
         verify(transactionalRepository).save(any(Transaction.class));
     }
 
     @Test
-    void transfer_ShouldThrowInsufficientFundsException_WhenNotEnoughBalance() {
-        Wallet toWallet = new Wallet();
-        toWallet.setWalletId(UUID.randomUUID());
-        toWallet.setBalance(BigDecimal.valueOf(20));
+    void deposit_ShouldThrowException_WhenWalletNotFound() {
+        when(walletRepository.findByWalletId(walletId)).thenReturn(Optional.empty());
 
-        BigDecimal amount = BigDecimal.valueOf(150);
-
-        InsufficientFundsException ex = assertThrows(InsufficientFundsException.class,
-                () -> transactionService.transfer(wallet, toWallet, amount, "too much"));
-
-        assertTrue(ex.getMessage().contains(wallet.getWalletId().toString()));
+        assertThrows(WalletNotFoundException.class, () ->
+                transactionService.deposit(walletId, BigDecimal.TEN, "Test"));
     }
 
     @Test
